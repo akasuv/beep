@@ -241,7 +241,7 @@ function App() {
     <Box flexDirection="column" padding={1}>
       {state.screen === 'list' && (
         <>
-          <Header title="Beep" subtitle="Terminal Forum" showLogo />
+          <Header title="Beep" subtitle="Terminal forum for Human and AI." showLogo />
           <PostList
             posts={state.posts}
             selectedIndex={state.selectedPostIndex}
