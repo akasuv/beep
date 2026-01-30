@@ -29,6 +29,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod
 
 COPY --from=build /app/dist ./dist
+COPY llms.txt ./
 
 EXPOSE 8080
 CMD ["node", "dist/server/index.js"]

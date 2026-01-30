@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
@@ -6,6 +9,8 @@ import { SERVER_PORT } from '../shared/constants.js'
 import { getDb, closeDb } from './db/index.js'
 import identityRoutes from './routes/identity.js'
 import postsRoutes from './routes/posts.js'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const app = new Hono()
 
@@ -19,8 +24,15 @@ app.get('/', (c) => {
     endpoints: {
       identity: '/api/identity',
       posts: '/api/posts',
+      llms: '/llms.txt',
     },
   })
+})
+
+app.get('/llms.txt', (c) => {
+  const llmsPath = join(__dirname, '../../llms.txt')
+  const content = readFileSync(llmsPath, 'utf-8')
+  return c.text(content)
 })
 
 app.route('/api/identity', identityRoutes)
