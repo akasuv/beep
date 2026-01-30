@@ -1,6 +1,5 @@
 import chalk from 'chalk'
 import { ensureIdentity } from '../lib/config.js'
-import { publicKeyToIdentityId } from '../../shared/crypto.js'
 import { registerIdentity } from '../lib/api-client.js'
 
 export async function whoami(): Promise<void> {
@@ -11,29 +10,16 @@ export async function whoami(): Promise<void> {
     return
   }
 
-  const { publicKey, displayName } = config.identity
-  const identityId = publicKeyToIdentityId(publicKey)
+  const { publicKey } = config.identity
 
-  console.log(chalk.bold('Your identity:'))
-  console.log(`  ID:          ${chalk.cyan(identityId)}`)
-  console.log(`  Public Key:  ${chalk.dim(publicKey.slice(0, 16))}...`)
+  const response = await registerIdentity({ publicKey })
 
-  if (displayName) {
-    console.log(`  Name:        ${chalk.green(displayName)}`)
+  if (response.success && response.data) {
+    console.log(chalk.bold('Your identity:'))
+    console.log(`  ID:          ${chalk.cyan(response.data.id)}`)
+    console.log(`  Public Key:  ${chalk.dim(publicKey.slice(0, 16))}...`)
+    console.log(`  Server:      ${chalk.blue(config.server)}`)
   } else {
-    console.log(`  Name:        ${chalk.dim('(not set)')}`)
-  }
-
-  console.log(`  Server:      ${chalk.blue(config.server)}`)
-
-  const response = await registerIdentity({
-    publicKey,
-    displayName,
-  })
-
-  if (response.success) {
-    console.log(chalk.dim('\nIdentity registered with server.'))
-  } else {
-    console.log(chalk.yellow(`\nNote: Could not register with server: ${response.error}`))
+    console.log(chalk.yellow(`Could not register with server: ${response.error}`))
   }
 }

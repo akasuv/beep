@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { render, Box, useInput } from 'ink'
+import { render, Box, Text, useInput } from 'ink'
 import type { Post, Reply } from '../../shared/types.js'
 import {
   getPosts,
@@ -12,9 +12,9 @@ import { ensureIdentity } from '../lib/config.js'
 import { sign } from '../../shared/crypto.js'
 import { Header, Footer, PostList, PostDetail, Composer } from './components/index.js'
 
-type Screen = 'list' | 'detail' | 'compose'
+  type Screen = 'list' | 'detail' | 'compose'
 
-interface AppState {
+  interface AppState {
   screen: Screen
   posts: Post[]
   selectedPostIndex: number
@@ -22,12 +22,15 @@ interface AppState {
   replies: Reply[]
   selectedReplyIndex: number
   loading: boolean
+  loadingPost: boolean
   loadingReplies: boolean
   error?: string
+  postError?: string
   repliesError?: string
-  composeMode: 'post' | 'reply'
+  composeMode: 'post' | 'comment'
   composeText: string
   submitting: boolean
+  submitError?: string
 }
 
 function App() {
@@ -39,6 +42,7 @@ function App() {
     replies: [],
     selectedReplyIndex: 0,
     loading: true,
+    loadingPost: false,
     loadingReplies: false,
     composeMode: 'post',
     composeText: '',
@@ -55,8 +59,22 @@ function App() {
     }
   }, [])
 
-  const fetchPostDetail = useCallback(async (postId: string) => {
-    setState((s) => ({ ...s, loadingReplies: true, repliesError: undefined }))
+  const fetchPostDetail = useCallback(async (postId: string, opts?: { reset?: boolean }) => {
+    const reset = opts?.reset ?? true
+    setState((s) => ({
+      ...s,
+      loadingPost: true,
+      loadingReplies: true,
+      postError: undefined,
+      repliesError: undefined,
+      ...(reset
+        ? {
+            selectedPost: null,
+            replies: [],
+            selectedReplyIndex: 0,
+          }
+        : null),
+    }))
 
     const [postResponse, repliesResponse] = await Promise.all([
       getPost(postId),
@@ -68,14 +86,16 @@ function App() {
         ...s,
         selectedPost: postResponse.data!,
         replies: repliesResponse.success && repliesResponse.data ? repliesResponse.data : [],
+        loadingPost: false,
         loadingReplies: false,
         repliesError: repliesResponse.success ? undefined : repliesResponse.error,
       }))
     } else {
       setState((s) => ({
         ...s,
+        loadingPost: false,
         loadingReplies: false,
-        repliesError: postResponse.error,
+        postError: postResponse.error,
       }))
     }
   }, [])
@@ -87,12 +107,16 @@ function App() {
   const handleSubmitPost = useCallback(async () => {
     if (!state.composeText.trim() || state.submitting) return
 
-    setState((s) => ({ ...s, submitting: true }))
+    setState((s) => ({ ...s, submitting: true, submitError: undefined }))
 
     try {
       const config = await ensureIdentity()
       if (!config.identity) {
-        setState((s) => ({ ...s, submitting: false, screen: 'list', composeText: '' }))
+        setState((s) => ({
+          ...s,
+          submitting: false,
+          submitError: 'Could not load identity',
+        }))
         return
       }
 
@@ -101,16 +125,25 @@ function App() {
       const signature = await sign(content, privateKey)
 
       if (state.composeMode === 'post') {
-        await apiCreatePost({ content, publicKey, signature })
-        await fetchPosts()
+        const resp = await apiCreatePost({ content, publicKey, signature })
+        if (!resp.success) {
+          setState((s) => ({ ...s, submitting: false, submitError: resp.error || 'Failed to submit' }))
+          return
+        }
+        await fetchPosts() // keep submitting until refresh completes
       } else if (state.selectedPost) {
-        await apiCreateReply(state.selectedPost.id, {
+        const resp = await apiCreateReply(state.selectedPost.id, {
           content,
           postId: state.selectedPost.id,
           publicKey,
           signature,
         })
-        await fetchPostDetail(state.selectedPost.id)
+        if (!resp.success) {
+          setState((s) => ({ ...s, submitting: false, submitError: resp.error || 'Failed to submit' }))
+          return
+        }
+        // refresh detail, but don't clear selectedPost while we're still composing
+        await fetchPostDetail(state.selectedPost.id, { reset: false })
       }
 
       setState((s) => ({
@@ -120,13 +153,13 @@ function App() {
         composeText: '',
       }))
     } catch {
-      setState((s) => ({ ...s, submitting: false }))
+      setState((s) => ({ ...s, submitting: false, submitError: 'Submit failed' }))
     }
   }, [state.composeText, state.composeMode, state.selectedPost, state.submitting, fetchPosts, fetchPostDetail])
 
   useInput((input, key) => {
     if (state.screen === 'compose') {
-      if (key.escape) {
+      if (key.escape && !state.submitting) {
         setState((s) => ({
           ...s,
           screen: s.composeMode === 'post' ? 'list' : 'detail',
@@ -160,7 +193,7 @@ function App() {
     } else if (key.return) {
       if (state.screen === 'list' && state.posts.length > 0) {
         const post = state.posts[state.selectedPostIndex]
-        fetchPostDetail(post.id)
+        fetchPostDetail(post.id, { reset: true })
         setState((s) => ({ ...s, screen: 'detail', selectedReplyIndex: 0 }))
       }
     } else if (input === 'b' || key.escape) {
@@ -173,12 +206,18 @@ function App() {
       if (state.screen === 'list') {
         fetchPosts()
       } else if (state.selectedPost) {
-        fetchPostDetail(state.selectedPost.id)
+        fetchPostDetail(state.selectedPost.id, { reset: false })
       }
     } else if (input === 'n') {
       setState((s) => ({ ...s, screen: 'compose', composeMode: 'post', composeText: '' }))
-    } else if (input === 'R' && state.screen === 'detail' && state.selectedPost) {
-      setState((s) => ({ ...s, screen: 'compose', composeMode: 'reply', composeText: '' }))
+    } else if (input === 'c' && state.screen === 'detail' && state.selectedPost) {
+      setState((s) => ({
+        ...s,
+        screen: 'compose',
+        composeMode: 'comment',
+        composeText: '',
+        submitError: undefined,
+      }))
     }
   })
 
@@ -192,7 +231,7 @@ function App() {
 
   const detailHints = [
     { key: 'j/k', action: 'navigate' },
-    { key: 'R', action: 'reply' },
+    { key: 'c', action: 'comment' },
     { key: 'r', action: 'refresh' },
     { key: 'b', action: 'back' },
     { key: 'q', action: 'quit' },
@@ -216,6 +255,16 @@ function App() {
       {state.screen === 'detail' && (
         <>
           <Header title="Post Detail" />
+          {state.loadingPost && (
+            <Box>
+              <Text color="yellow">Loading post...</Text>
+            </Box>
+          )}
+          {state.postError && (
+            <Box>
+              <Text color="red">Error: {state.postError}</Text>
+            </Box>
+          )}
           {state.selectedPost && (
             <PostDetail
               post={state.selectedPost}
@@ -231,20 +280,25 @@ function App() {
 
       {state.screen === 'compose' && (
         <>
-          <Header title="Beep" subtitle={state.composeMode === 'post' ? 'New Post' : 'Reply'} />
+          <Header title="Beep" subtitle={state.composeMode === 'post' ? 'New Post' : 'Comment'} />
           <Composer
             mode={state.composeMode}
             value={state.composeText}
-            onChange={(text) => setState((s) => ({ ...s, composeText: text }))}
+            onChange={(text) => {
+              if (!state.submitting) setState((s) => ({ ...s, composeText: text }))
+            }}
             onSubmit={handleSubmitPost}
             onCancel={() =>
               setState((s) => ({
                 ...s,
                 screen: s.composeMode === 'post' ? 'list' : 'detail',
                 composeText: '',
+                submitError: undefined,
               }))
             }
-            replyingTo={state.selectedPost?.authorName || state.selectedPost?.authorId}
+            replyingTo={state.selectedPost?.authorId}
+            submitting={state.submitting}
+            error={state.submitError}
           />
         </>
       )}

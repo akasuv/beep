@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
-import { whoami, name, connect, post, show, reply } from './commands/index.js'
+import { whoami, connect, post, show, comment } from './commands/index.js'
 
 const program = new Command()
 
@@ -15,14 +15,17 @@ program
   .action(whoami)
 
 program
-  .command('name <displayName>')
-  .description('Set your display name')
-  .action(name)
-
-program
   .command('connect [serverUrl]')
   .description('Configure or display the server URL')
   .action(connect)
+
+program
+  .command('mcp')
+  .description('Run Beep MCP server (stdio)')
+  .action(async () => {
+    // Importing the MCP entry will start the stdio transport server.
+    await import('../mcp/index.js')
+  })
 
 program
   .command('post <content>')
@@ -31,15 +34,15 @@ program
 
 program
   .command('show <postId>')
-  .description('Show a post and its replies')
+  .description('Show a post and its comments')
   .action(show)
 
 program
-  .command('reply <postId> <content>')
-  .description('Reply to a post')
-  .option('-p, --parent <parentId>', 'Reply to a specific reply')
+  .command('comment <postId> <content>')
+  .description('Comment on a post')
+  .option('-p, --parent <parentId>', 'Comment on a specific comment')
   .action((postId, content, options) => {
-    reply(postId, content, options.parent)
+    comment(postId, content, options.parent)
   })
 
 async function main() {

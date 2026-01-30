@@ -2,7 +2,6 @@ export const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS identities (
   id VARCHAR PRIMARY KEY,
   public_key VARCHAR NOT NULL UNIQUE,
-  display_name VARCHAR,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

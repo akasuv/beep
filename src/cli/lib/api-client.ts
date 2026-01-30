@@ -6,7 +6,6 @@ import type {
   CreatePostRequest,
   CreateReplyRequest,
   RegisterIdentityRequest,
-  UpdateIdentityRequest,
 } from '../../shared/types.js'
 import { loadConfig } from './config.js'
 
@@ -48,15 +47,6 @@ export async function registerIdentity(
 ): Promise<ApiResponse<Identity>> {
   return fetchApi<Identity>('/api/identity', {
     method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function updateIdentity(
-  data: UpdateIdentityRequest
-): Promise<ApiResponse<Identity>> {
-  return fetchApi<Identity>('/api/identity', {
-    method: 'PUT',
     body: JSON.stringify(data),
   })
 }

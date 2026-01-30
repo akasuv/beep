@@ -4,69 +4,45 @@ import { ID_LENGTH } from '../../../shared/constants.js'
 import { getDb } from '../index.js'
 
 export async function getRepliesByPostId(postId: string): Promise<Reply[]> {
-  const db = await getDb()
-  const result = await db.all(
-    `SELECT
-      r.id,
-      r.post_id,
-      r.parent_id,
-      r.author_id,
-      i.display_name as author_name,
-      r.content,
-      r.signature,
-      r.created_at,
-      r.depth
-    FROM replies r
-    LEFT JOIN identities i ON r.author_id = i.id
-    WHERE r.post_id = ?
-    ORDER BY r.created_at ASC`,
-    postId
-  )
+  const db = getDb()
+  const { data, error } = await db
+    .from('replies')
+    .select('id, post_id, parent_id, author_id, content, signature, created_at, depth')
+    .eq('post_id', postId)
+    .order('created_at', { ascending: false })
 
-  return result.map((row) => {
-    const r = row as Record<string, unknown>
-    return {
-      id: r.id as string,
-      postId: r.post_id as string,
-      parentId: r.parent_id as string | null,
-      authorId: r.author_id as string,
-      authorName: r.author_name as string | null,
-      content: r.content as string,
-      signature: r.signature as string,
-      createdAt: String(r.created_at),
-      depth: Number(r.depth),
-    }
-  })
+  if (error) throw new Error(error.message)
+  const rows = data || []
+
+  return rows.map((r: any) => ({
+    id: r.id as string,
+    postId: r.post_id as string,
+    parentId: (r.parent_id as string) ?? null,
+    authorId: r.author_id as string,
+    content: r.content as string,
+    signature: r.signature as string,
+    createdAt: String(r.created_at),
+    depth: Number(r.depth),
+  }))
 }
 
 export async function getReplyById(id: string): Promise<Reply | null> {
-  const db = await getDb()
-  const result = await db.all(
-    `SELECT
-      r.id,
-      r.post_id,
-      r.parent_id,
-      r.author_id,
-      i.display_name as author_name,
-      r.content,
-      r.signature,
-      r.created_at,
-      r.depth
-    FROM replies r
-    LEFT JOIN identities i ON r.author_id = i.id
-    WHERE r.id = ?`,
-    id
-  )
+  const db = getDb()
+  const { data, error } = await db
+    .from('replies')
+    .select('id, post_id, parent_id, author_id, content, signature, created_at, depth')
+    .eq('id', id)
+    .maybeSingle()
 
-  if (result.length === 0) return null
+  if (error) throw new Error(error.message)
+  if (!data) return null
 
-  const r = result[0] as Record<string, unknown>
+  const r: any = data
   return {
     id: r.id as string,
     postId: r.post_id as string,
-    parentId: r.parent_id as string | null,
+    parentId: (r.parent_id as string) ?? null,
     authorId: r.author_id as string,
-    authorName: r.author_name as string | null,
     content: r.content as string,
     signature: r.signature as string,
     createdAt: String(r.created_at),
@@ -81,8 +57,8 @@ export async function createReply(
   signature: string,
   parentId?: string
 ): Promise<Reply> {
-  const db = await getDb()
   const id = nanoid(ID_LENGTH)
+  const db = getDb()
 
   let depth = 0
   if (parentId) {
@@ -92,20 +68,34 @@ export async function createReply(
     }
   }
 
-  await db.run(
-    `INSERT INTO replies (id, post_id, parent_id, author_id, content, signature, depth) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    id,
-    postId,
-    parentId ?? null,
-    authorId,
-    content,
-    signature,
-    depth
-  )
+  const { data, error } = await db
+    .from('replies')
+    .insert([
+      {
+        id,
+        post_id: postId,
+        parent_id: parentId ?? null,
+        author_id: authorId,
+        content,
+        signature,
+        depth,
+      },
+    ])
+    .select('id, post_id, parent_id, author_id, content, signature, created_at, depth')
+    .single()
 
-  const reply = await getReplyById(id)
-  if (!reply) throw new Error('Failed to create reply')
-  return reply
+  if (error) throw new Error(error.message)
+
+  return {
+    id: data.id as string,
+    postId: data.post_id as string,
+    parentId: (data.parent_id as string) ?? null,
+    authorId: data.author_id as string,
+    content: data.content as string,
+    signature: data.signature as string,
+    createdAt: String(data.created_at),
+    depth: Number(data.depth),
+  }
 }
 
 export function buildReplyTree(replies: Reply[]): Reply[] {

@@ -3,12 +3,14 @@ import { Box, Text } from 'ink'
 import TextInput from 'ink-text-input'
 
 interface ComposerProps {
-  mode: 'post' | 'reply'
+  mode: 'post' | 'comment'
   value: string
   onChange: (value: string) => void
   onSubmit: () => void
   onCancel: () => void
   replyingTo?: string
+  submitting?: boolean
+  error?: string
 }
 
 export function Composer({
@@ -18,6 +20,8 @@ export function Composer({
   onSubmit,
   onCancel,
   replyingTo,
+  submitting = false,
+  error,
 }: ComposerProps) {
   const handleSubmit = () => {
     if (value.trim()) {
@@ -29,7 +33,7 @@ export function Composer({
     <Box flexDirection="column" borderStyle="single" paddingX={1}>
       <Box marginBottom={1}>
         <Text bold color="cyan">
-          {mode === 'post' ? 'New Post' : `Reply to ${replyingTo}`}
+          {mode === 'post' ? 'New Post' : `Comment to ${replyingTo}`}
         </Text>
       </Box>
 
@@ -37,15 +41,18 @@ export function Composer({
         <Text color="gray">&gt; </Text>
         <TextInput
           value={value}
-          onChange={onChange}
-          onSubmit={handleSubmit}
+          onChange={(next) => {
+            if (!submitting) onChange(next)
+          }}
+          onSubmit={() => {
+            if (!submitting) handleSubmit()
+          }}
         />
       </Box>
 
       <Box marginTop={1}>
-        <Text color="gray">
-          Enter to submit · Esc to cancel
-        </Text>
+        {error ? <Text color="red">Error: {error}</Text> : null}
+        {submitting ? <Text color="yellow">Submitting...</Text> : <Text color="gray">Enter to submit · Esc to cancel</Text>}
       </Box>
     </Box>
   )

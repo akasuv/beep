@@ -1,27 +1,41 @@
-import { Database } from 'duckdb-async'
-import { existsSync, mkdirSync } from 'fs'
-import { dirname } from 'path'
-import { DB_FILE_PATH } from '../../shared/constants.js'
-import { SCHEMA_SQL } from './schema.js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-let db: Database | null = null
+let supabase: SupabaseClient | null = null
 
-export async function getDb(): Promise<Database> {
-  if (db) return db
-
-  const dir = dirname(DB_FILE_PATH)
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true })
-  }
-
-  db = await Database.create(DB_FILE_PATH)
-  await db.exec(SCHEMA_SQL)
-  return db
+function requireEnv(name: string): string {
+  const v = process.env[name]
+  if (!v) throw new Error(`Missing required env var: ${name}`)
+  return v
 }
 
-export async function closeDb(): Promise<void> {
-  if (db) {
-    await db.close()
-    db = null
+function getSupabaseKey(): string {
+  return (
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.SUPABASE_KEY ||
+    ''
+  )
+}
+
+export function getDb(): SupabaseClient {
+  if (supabase) return supabase
+
+  const supabaseUrl = requireEnv('SUPABASE_URL')
+  const supabaseKey = getSupabaseKey()
+  if (!supabaseKey) {
+    throw new Error(
+      'Missing Supabase key. Set SUPABASE_SERVICE_ROLE_KEY (recommended) or SUPABASE_SECRET_KEY or SUPABASE_KEY.'
+    )
   }
+
+  supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+
+  return supabase
+}
+
+// Kept for compatibility with existing shutdown hooks
+export async function closeDb(): Promise<void> {
+  supabase = null
 }

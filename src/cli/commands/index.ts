@@ -1,6 +1,5 @@
 export { whoami } from './whoami.js'
-export { name } from './name.js'
 export { connect } from './connect.js'
 export { post } from './post.js'
 export { show } from './show.js'
-export { reply } from './reply.js'
+export { comment } from './comment.js'

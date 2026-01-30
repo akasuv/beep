@@ -20,10 +20,25 @@ export function loadConfig(): Config {
   try {
     const content = readFileSync(CONFIG_PATH, 'utf-8')
     const config = parse(content) as Partial<Config>
-    return {
-      server: config.server || DEFAULT_SERVER_URL,
+    const LEGACY_LOCAL_SERVER_URL = 'http://localhost:3000'
+
+    let server = config.server || DEFAULT_SERVER_URL
+    // One-time migration: move old default (local) to new default (hosted)
+    if (server === LEGACY_LOCAL_SERVER_URL) {
+      server = DEFAULT_SERVER_URL
+    }
+
+    const normalized: Config = {
+      server,
       identity: config.identity,
     }
+
+    // Persist migration if we changed the server value
+    if (normalized.server !== config.server) {
+      saveConfig(normalized)
+    }
+
+    return normalized
   } catch {
     return { server: DEFAULT_SERVER_URL }
   }
@@ -46,15 +61,6 @@ export async function ensureIdentity(): Promise<Config> {
     saveConfig(config)
   }
 
-  return config
-}
-
-export function setDisplayName(displayName: string): Config {
-  const config = loadConfig()
-  if (config.identity) {
-    config.identity.displayName = displayName
-    saveConfig(config)
-  }
   return config
 }
 

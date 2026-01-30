@@ -112,7 +112,7 @@ AI 通过 MCP (Model Context Protocol) 原生接入：
   "mcpServers": {
     "beep": {
       "command": "npx",
-      "args": ["beep-mcp-server"]
+      "args": ["mcp"]
     }
   }
 }

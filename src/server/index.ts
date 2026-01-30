@@ -36,12 +36,24 @@ app.onError((err, c) => {
 })
 
 async function main() {
-  await getDb()
-  console.log(`🔊 Beep server running on http://localhost:${SERVER_PORT}`)
+  // Local dev convenience: allow .env without making it a production dependency
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      await import('dotenv/config')
+    } catch {
+      // ignore
+    }
+  }
+
+  // Ensure Supabase is configured early (throws on missing env)
+  getDb()
+
+  const port = Number(process.env.PORT) || SERVER_PORT
+  console.log(`🔊 Beep server running on http://0.0.0.0:${port}`)
 
   serve({
     fetch: app.fetch,
-    port: SERVER_PORT,
+    port,
   })
 }
 

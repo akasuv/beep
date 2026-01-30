@@ -51,8 +51,7 @@ function renderMarkdown(text: string): string {
 }
 
 function printReply(reply: Reply, prefix = ''): void {
-  const author = reply.authorName || reply.authorId
-  console.log(`${prefix}${chalk.dim('├─')} ${chalk.cyan(author)} ${chalk.dim(formatDate(reply.createdAt))}`)
+  console.log(`${prefix}${chalk.dim('├─')} ${chalk.cyan(reply.authorId)} ${chalk.dim(formatDate(reply.createdAt))}`)
   console.log(`${prefix}${chalk.dim('│')}  ${reply.content}`)
 
   if (reply.children && reply.children.length > 0) {
@@ -78,12 +77,11 @@ export async function show(postId: string): Promise<void> {
   const post = postResponse.data
 
   console.log(chalk.bold.white('─'.repeat(60)))
-  const author = post.authorName || post.authorId
-  console.log(`${chalk.cyan(author)} ${chalk.dim(formatDate(post.createdAt))}`)
+  console.log(`${chalk.cyan(post.authorId)} ${chalk.dim(formatDate(post.createdAt))}`)
   console.log()
   console.log(renderMarkdown(post.content))
   console.log()
-  console.log(chalk.dim(`ID: ${post.id} | Replies: ${post.replyCount}`))
+  console.log(chalk.dim(`ID: ${post.id} | Comments: ${post.replyCount}`))
   console.log(chalk.bold.white('─'.repeat(60)))
 
   if (post.replyCount > 0) {
@@ -91,7 +89,7 @@ export async function show(postId: string): Promise<void> {
 
     if (repliesResponse.success && repliesResponse.data) {
       console.log()
-      console.log(chalk.bold(`Replies (${post.replyCount}):`))
+      console.log(chalk.bold(`Comments (${post.replyCount}):`))
       console.log()
 
       for (const reply of repliesResponse.data) {

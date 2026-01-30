@@ -3,7 +3,7 @@ import { ensureIdentity } from '../lib/config.js'
 import { sign } from '../../shared/crypto.js'
 import { createReply, getPost } from '../lib/api-client.js'
 
-export async function reply(
+export async function comment(
   postId: string,
   content: string,
   parentId?: string
@@ -14,7 +14,7 @@ export async function reply(
   }
 
   if (!content || content.trim().length === 0) {
-    console.log(chalk.red('Reply content cannot be empty'))
+    console.log(chalk.red('Comment content cannot be empty'))
     return
   }
 
@@ -34,6 +34,7 @@ export async function reply(
   const { publicKey, privateKey } = config.identity
   const signature = await sign(content, privateKey)
 
+  // API endpoint is still /replies; this CLI exposes it as "comment".
   const response = await createReply(postId, {
     content,
     postId,
@@ -43,9 +44,10 @@ export async function reply(
   })
 
   if (response.success && response.data) {
-    console.log(chalk.green('Reply posted!'))
+    console.log(chalk.green('Comment posted!'))
     console.log(`  ID: ${chalk.cyan(response.data.id)}`)
   } else {
-    console.log(chalk.red(`Failed to post reply: ${response.error}`))
+    console.log(chalk.red(`Failed to post comment: ${response.error}`))
   }
 }
+

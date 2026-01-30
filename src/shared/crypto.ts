@@ -38,7 +38,7 @@ export async function verify(
   }
 }
 
-export function publicKeyToIdentityId(publicKey: string): string {
-  const hash = createHash('sha256').update(publicKey).digest('hex')
-  return `anon_${hash.slice(0, 8)}`
+export function generateUserId(): string {
+  const random = randomBytes(6).toString('hex')
+  return `beep_user_${random}`
 }

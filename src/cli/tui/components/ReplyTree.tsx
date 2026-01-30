@@ -25,7 +25,7 @@ export function ReplyTree({ replies, selectedIndex, loading, error }: ReplyTreeP
   if (loading) {
     return (
       <Box>
-        <Text color="yellow">Loading replies...</Text>
+        <Text color="yellow">Loading comments...</Text>
       </Box>
     )
   }
@@ -43,14 +43,14 @@ export function ReplyTree({ replies, selectedIndex, loading, error }: ReplyTreeP
   if (flatReplies.length === 0) {
     return (
       <Box marginTop={1}>
-        <Text color="gray">No replies yet. Press 'R' to add a reply!</Text>
+        <Text color="gray">No comments yet. Press 'c' to add a comment!</Text>
       </Box>
     )
   }
 
   return (
     <Box flexDirection="column" marginTop={1} gap={1}>
-      <Text bold>Replies ({flatReplies.length}):</Text>
+      <Text bold>Comments ({flatReplies.length}):</Text>
       {flatReplies.map((reply, index) => (
         <ReplyItem key={reply.id} reply={reply} isSelected={index === selectedIndex} />
       ))}

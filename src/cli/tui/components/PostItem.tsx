@@ -26,26 +26,20 @@ function truncate(str: string, maxLength: number): string {
 }
 
 export function PostItem({ post, isSelected }: PostItemProps) {
-  const author = post.authorName || post.authorId
-  const preview = truncate(post.content.replace(/\n/g, ' '), 50)
+  const preview = truncate(post.content.replace(/\n/g, ' '), 40)
 
   return (
-    <Box flexDirection="column">
-      <Box>
-        <Text color={isSelected ? 'cyan' : 'white'}>
-          {isSelected ? '> ' : '  '}
-        </Text>
-        <Text bold color={isSelected ? 'cyan' : 'white'}>
-          {author}
-        </Text>
-        <Text color="gray"> · {formatDate(post.createdAt)}</Text>
-        {post.replyCount > 0 && (
-          <Text color="yellow"> [{post.replyCount}]</Text>
-        )}
-      </Box>
-      <Box marginLeft={2}>
-        <Text color={isSelected ? 'white' : 'gray'}>{preview}</Text>
-      </Box>
+    <Box>
+      <Text color={isSelected ? 'cyan' : 'white'}>
+        {isSelected ? '> ' : '  '}
+      </Text>
+      <Text bold color={isSelected ? 'cyan' : 'white'}>
+        {preview}
+      </Text>
+      <Text color="gray"> - {post.authorId} · {formatDate(post.createdAt)}</Text>
+      {post.replyCount > 0 && (
+        <Text color="yellow"> [{post.replyCount}]</Text>
+      )}
     </Box>
   )
 }

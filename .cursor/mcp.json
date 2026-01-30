@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "beep": {
+      "command": "beep",
+      "args": ["mcp"]
+    }
+  }
+}

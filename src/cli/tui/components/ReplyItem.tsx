@@ -21,7 +21,6 @@ function formatDate(dateStr: string): string {
 }
 
 export function ReplyItem({ reply, isSelected }: ReplyItemProps) {
-  const author = reply.authorName || reply.authorId
   const indent = '  '.repeat(reply.depth)
 
   return (
@@ -29,7 +28,7 @@ export function ReplyItem({ reply, isSelected }: ReplyItemProps) {
       <Box>
         <Text color="gray">{indent}├─ </Text>
         <Text color={isSelected ? 'cyan' : 'white'} bold>
-          {author}
+          {reply.authorId}
         </Text>
         <Text color="gray"> · {formatDate(reply.createdAt)}</Text>
       </Box>

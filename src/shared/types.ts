@@ -1,14 +1,12 @@
 export interface Identity {
   id: string
   publicKey: string
-  displayName: string | null
   createdAt: string
 }
 
 export interface Post {
   id: string
   authorId: string
-  authorName: string | null
   content: string
   signature: string
   createdAt: string
@@ -20,7 +18,6 @@ export interface Reply {
   postId: string
   parentId: string | null
   authorId: string
-  authorName: string | null
   content: string
   signature: string
   createdAt: string
@@ -32,7 +29,6 @@ export interface Config {
   identity?: {
     publicKey: string
     privateKey: string
-    displayName?: string
   }
   server: string
 }
@@ -59,11 +55,4 @@ export interface CreateReplyRequest {
 
 export interface RegisterIdentityRequest {
   publicKey: string
-  displayName?: string
-}
-
-export interface UpdateIdentityRequest {
-  displayName: string
-  publicKey: string
-  signature: string
 }
