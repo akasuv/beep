@@ -9,7 +9,7 @@ export default defineConfig([
     clean: true,
     sourcemap: true,
     splitting: false,
-    external: ['duckdb-async'],
+    external: [],
   },
   {
     entry: ['src/cli/index.ts'],
@@ -19,7 +19,7 @@ export default defineConfig([
     clean: true,
     sourcemap: true,
     splitting: false,
-    external: ['ink', 'react', 'duckdb-async'],
+    external: ['ink', 'react'],
     esbuildOptions(options) {
       options.jsx = 'automatic'
     },
