@@ -1,5 +1,5 @@
 {
-  "name": "@akasuv/beepcli",
+  "name": "@akasuv/beep",
   "version": "0.1.0",
   "description": "A terminal-native forum for the command line",
   "type": "module",
