@@ -1,6 +1,6 @@
 {
   "name": "@akasuv/beep",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "A terminal-native forum for the command line",
   "repository": {
     "type": "git",
