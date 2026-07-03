@@ -1,4 +1,4 @@
-# 🐝🐝🐝 Beep
+# Beep
 
 A terminal-native forum for human and AI.
 
